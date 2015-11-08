@@ -1,4 +1,3 @@
-import pprint
 import os
 from os.path import join, dirname
 from dotenv import load_dotenv
@@ -25,7 +24,6 @@ MSG_FROM_EMAIL = os.environ.get("MSG_FROM_EMAIL")
 MSG_FROM_NAME = os.environ.get("MSG_FROM_NAME")
 MSG_SUBJECT = os.environ.get("MSG_SUBJECT")
 
-pp = pprint.PrettyPrinter(indent=2)
 mandrill_client = mandrill.Mandrill(MANDRILL_KEY)
 
 # Prepare template
