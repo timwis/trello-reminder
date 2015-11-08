@@ -9,7 +9,6 @@ import dateutil.parser
 import pytz
 import mandrill
 from jinja2 import Environment, PackageLoader
-import yaml
 
 # Load environment variables
 dotenv_path = join(dirname(__file__), '.env')
@@ -23,6 +22,7 @@ MANDRILL_KEY = os.environ.get("MANDRILL_KEY")
 MSG_FROM_EMAIL = os.environ.get("MSG_FROM_EMAIL")
 MSG_FROM_NAME = os.environ.get("MSG_FROM_NAME")
 MSG_SUBJECT = os.environ.get("MSG_SUBJECT")
+MEMBER_EMAILS = os.environ.get("MEMBER_EMAILS")
 
 mandrill_client = mandrill.Mandrill(MANDRILL_KEY)
 
@@ -30,9 +30,12 @@ mandrill_client = mandrill.Mandrill(MANDRILL_KEY)
 template_env = Environment(loader=PackageLoader(__name__, "templates"))
 template = template_env.get_template("reminder_email.html")
 			
-# Load member email addresses from json file
-with open("members.yaml") as members_file:
-	member_emails = yaml.load(members_file)
+# Split member emails into a dict
+member_emails = {}
+member_email_lines = MEMBER_EMAILS.split(",")
+for member_email_line in member_email_lines:
+	member_email_line_parts = member_email_line.split(":")
+	member_emails[member_email_line_parts[0].strip()] = member_email_line_parts[1].strip()
 
 # Querystring parameters
 params = {

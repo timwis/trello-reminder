@@ -58,7 +58,6 @@ pyparsing==2.0.1
 python-dateutil==1.5
 python-dotenv==0.3.0
 pytz==2015.7
-PyYAML==3.11
 requests==2.8.1
 scipy==0.13.0b1
 six==1.4.1
