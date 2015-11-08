@@ -1,0 +1,6 @@
+<p>The following cards haven't been updated in over {{ num_days }} days:</p>
+<ul>
+	{% for card in cards %}
+		<li><a href="{{ card.url }}">{{ card.name }}</a></li>
+	{% endfor %}
+</ul>

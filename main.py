@@ -9,20 +9,32 @@ from datetime import datetime
 import dateutil.parser
 import pytz
 import mandrill
+from jinja2 import Environment, PackageLoader
+import yaml
 
 # Load environment variables
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
+MIN_DAYS = os.environ.get("MIN_DAYS")
 TRELLO_KEY = os.environ.get("TRELLO_KEY")
 TRELLO_TOKEN = os.environ.get("TRELLO_TOKEN")
 TRELLO_BOARD = os.environ.get("TRELLO_BOARD")
 MANDRILL_KEY = os.environ.get("MANDRILL_KEY")
 MSG_FROM_EMAIL = os.environ.get("MSG_FROM_EMAIL")
+MSG_FROM_NAME = os.environ.get("MSG_FROM_NAME")
 MSG_SUBJECT = os.environ.get("MSG_SUBJECT")
 
 pp = pprint.PrettyPrinter(indent=2)
 mandrill_client = mandrill.Mandrill(MANDRILL_KEY)
+
+# Prepare template
+template_env = Environment(loader=PackageLoader(__name__, "templates"))
+template = template_env.get_template("reminder_email.html")
+			
+# Load member email addresses from json file
+with open("members.yaml") as members_file:
+	member_emails = yaml.load(members_file)
 
 # Querystring parameters
 params = {
@@ -32,13 +44,7 @@ params = {
 	"members": "true"
 }
 
-message_template = {
-	"subject": MSG_SUBJECT,
-	"from_email": MSG_FROM_EMAIL,
-	"to": []
-}
-
-# Construct URL and fetch
+# Construct trello URL and fetch
 url = "https://api.trello.com/1/boards/" + TRELLO_BOARD + "/cards?" + urlencode(params)
 cards = json.load(urllib2.urlopen(url))
 
@@ -47,38 +53,31 @@ members = {}
 
 # For each card that's older than a week
 for card in cards:
-	dateLastActivity = dateutil.parser.parse(card[u'dateLastActivity']) 
-	if abs(today - dateLastActivity).days > 7:
+	dateLastActivity = dateutil.parser.parse(card[u'dateLastActivity'])
+	if abs(today - dateLastActivity).days > int(MIN_DAYS):
 		# Add card to each member's list
 		for member in card[u'members']:
 			username = str(member[u'username'])
 			if username not in members:
 				members[username] = []
 			members[username].append(card)
-			
-# Load member email addresses from json file
-with open("members.json") as members_file:
-	member_emails = json.load(members_file)
-	
+
+# For each member
 for username in members:
 	if username in member_emails:
-		print member_emails[username]
-		
-		# Add member-specific info to message template
-		message = message_template.copy()
-		message["to"].append({
-			"email": member_emails[username],
-			"name": username,
-			"type": "to"
-		})
-		
-		# Add markup for each card to an array
-		member_cards = []
-		for card in members[username]:
-			member_cards.append("<li><a href=\"" + card[u'url'] + "\">" + card[u'name'] + "</a></li>")
-		
-		# Construct HTML
-		message["html"] = "The following cards haven't been updated in over 7 days:<br><ul>" + "\n".join(member_cards) + "</ul>"
+		# Build message data
+		message = {
+			"subject": MSG_SUBJECT,
+			"from_email": MSG_FROM_EMAIL,
+			"from_name": MSG_FROM_NAME or MSG_FROM_EMAIL,
+			"to": [{
+				"email": member_emails[username],
+				"name": username,
+				"type": "to"
+			}],
+			# Construct HTML from template
+			"html": template.render(num_days=MIN_DAYS, cards=members[username])
+		}
 		
 		# Send email
 		try:
