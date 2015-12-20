@@ -32,26 +32,26 @@ for name in [
 mandrill_client = mandrill.Mandrill(env['MANDRILL_KEY'])
 
 # Prepare template
-template_env = Environment(loader=PackageLoader(__name__, "templates"))
-template = template_env.get_template("reminder_email.html")
+template_env = Environment(loader=PackageLoader(__name__, 'templates'))
+template = template_env.get_template('reminder_email.html')
 
 # Split member emails into a dict
 member_emails = {}
-member_email_lines = env['MEMBER_EMAILS'].split(",")
+member_email_lines = env['MEMBER_EMAILS'].split(',')
 for member_email_line in member_email_lines:
-  member_email_line_parts = member_email_line.split(":")
+  member_email_line_parts = member_email_line.split(':')
   member_emails[member_email_line_parts[0].strip()] = member_email_line_parts[1].strip()
 
 # Querystring parameters
 params = {
-  "key": env['TRELLO_KEY'],
-  "token": env['TRELLO_TOKEN'],
-  "fields": "name,url,dateLastActivity",
-  "members": "true"
+  'key': env['TRELLO_KEY'],
+  'token': env['TRELLO_TOKEN'],
+  'fields': 'name,url,dateLastActivity',
+  'members': 'true'
 }
 
 # Construct trello URL and fetch
-url = "https://api.trello.com/1/boards/" + env['TRELLO_BOARD'] + "/cards?" + urlencode(params)
+url = 'https://api.trello.com/1/boards/' + env['TRELLO_BOARD'] + '/cards?' + urlencode(params)
 cards = json.load(urllib2.urlopen(url))
 
 today = datetime.now(pytz.utc)
@@ -75,16 +75,16 @@ for username in members:
 
   # Build message data
   message = {
-    "subject": env['MSG_SUBJECT'],
-    "from_email": env['MSG_FROM_EMAIL'],
-    "from_name": env['MSG_FROM_NAME'] or env['MSG_FROM_EMAIL'],
-    "to": [{
-      "email": member_emails[username],
-      "name": username,
-      "type": "to"
+    'subject': env['MSG_SUBJECT'],
+    'from_email': env['MSG_FROM_EMAIL'],
+    'from_name': env['MSG_FROM_NAME'] or env['MSG_FROM_EMAIL'],
+    'to': [{
+      'email': member_emails[username],
+      'name': username,
+      'type': 'to'
     }],
     # Construct HTML from template
-    "html": template.render(num_days=env['MIN_DAYS'], cards=members[username])
+    'html': template.render(num_days=env['MIN_DAYS'], cards=members[username])
   }
 
   # Send email
