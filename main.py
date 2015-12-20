@@ -69,7 +69,7 @@ for card in cards:
       members[username].append(card)
 
 # For each member
-for username in members:
+for username, cards in members.iteritems():
   if username not in member_emails:
     continue
 
@@ -84,7 +84,7 @@ for username in members:
       'type': 'to'
     }],
     # Construct HTML from template
-    'html': template.render(num_days=env['MIN_DAYS'], cards=members[username])
+    'html': template.render(num_days=env['MIN_DAYS'], cards=cards)
   }
 
   # Send email
