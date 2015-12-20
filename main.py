@@ -1,4 +1,5 @@
 import os
+import urlparse
 
 from dotenv import load_dotenv
 from jinja2 import Environment, PackageLoader
@@ -30,12 +31,8 @@ mandrill_client = mandrill.Mandrill(env['MANDRILL_KEY'])
 template_env = Environment(loader=PackageLoader(__name__, 'templates'))
 template = template_env.get_template('reminder_email.html')
 
-# Split member emails into a dict
-member_emails = {}
-member_email_lines = env['MEMBER_EMAILS'].split(',')
-for member_email_line in member_email_lines:
-  member_email_line_parts = member_email_line.split(':')
-  member_emails[member_email_line_parts[0].strip()] = member_email_line_parts[1].strip()
+# Parse member emails into a dict
+member_emails = urlparse.parse_qs(env['MEMBER_EMAILS'])
 
 # Querystring parameters
 params = {
@@ -79,7 +76,7 @@ for username, cards in members.iteritems():
     'from_email': env['MSG_FROM_EMAIL'],
     'from_name': env['MSG_FROM_NAME'] or env['MSG_FROM_EMAIL'],
     'to': [{
-      'email': member_emails[username],
+      'email': '; '.join(member_emails[username]),
       'name': username,
       'type': 'to'
     }],
