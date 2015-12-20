@@ -1,18 +1,13 @@
 import os
-from os.path import join, dirname
-import json
-from urllib import urlencode
-import urllib2
-from datetime import datetime
-import dateutil.parser
 
 from dotenv import load_dotenv
-import pytz
-import mandrill
 from jinja2 import Environment, PackageLoader
+import requests
+import mandrill
+import arrow
 
 # Load environment variables
-dotenv_path = join(dirname(__file__), '.env')
+dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
 env = {}
@@ -51,16 +46,21 @@ params = {
 }
 
 # Construct trello URL and fetch
-url = 'https://api.trello.com/1/boards/' + env['TRELLO_BOARD'] + '/cards?' + urlencode(params)
-cards = json.load(urllib2.urlopen(url))
+url = 'https://api.trello.com/1/boards/%s/cards' % env['TRELLO_BOARD']
+r = requests.get(url, params=params)
+cards = r.json()
 
-today = datetime.now(pytz.utc)
+today = arrow.utcnow()
 members = {}
 
 # For each card that's older than a week
 for card in cards:
-  dateLastActivity = dateutil.parser.parse(card[u'dateLastActivity'])
-  if abs(today - dateLastActivity).days > int(env['MIN_DAYS']):
+  date_last_activity = arrow.get(card[u'dateLastActivity'])
+  days_since_activity = abs(today - date_last_activity).days
+  if days_since_activity > int(env['MIN_DAYS']):
+    # Store days since activity for template
+    card[u'days_since_activity'] = days_since_activity
+    
     # Add card to each member's list
     for member in card[u'members']:
       username = str(member[u'username'])
