@@ -61,9 +61,11 @@ for card in cards:
     # Add card to each member's list
     for member in card[u'members']:
       username = str(member[u'username'])
-      if username not in members:
-        members[username] = []
-      members[username].append(card)
+      
+      try:
+        members[username].append(card)
+      except KeyError:
+        members[username] = [card]
 
 # For each member
 for username, cards in members.iteritems():
