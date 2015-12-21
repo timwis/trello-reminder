@@ -24,7 +24,7 @@ for name in [
     'MEMBER_EMAILS',
   ]:
   env[name] = os.environ.get(name)
-
+print(env)
 mandrill_client = mandrill.Mandrill(env['MANDRILL_KEY'])
 
 # Prepare template
